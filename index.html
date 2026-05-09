@@ -7,32 +7,55 @@
     <style>
         body {
             margin: 0; padding: 0;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #ffafbd 0%, #ffc3a0 100%);
-            color: #5d4037; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            color: #5d4037; min-height: 100vh; overflow-x: hidden;
         }
 
-        /* Tombol Pemicu (Wajib untuk HP) */
-        #overlay {
-            background: white; padding: 30px; border-radius: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center;
-            width: 80%; max-width: 350px; z-index: 1000;
+        /* Overlay Awal (Hanya muncul sekali) */
+        #welcome-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 175, 189, 0.98);
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; z-index: 9999; text-align: center;
         }
 
         .btn-start {
             background: #d81b60; color: white; border: none;
-            padding: 15px 30px; border-radius: 50px; font-weight: bold;
-            font-size: 16px; cursor: pointer; margin-top: 20px; width: 100%;
+            padding: 15px 35px; border-radius: 50px; font-weight: bold;
+            font-size: 18px; cursor: pointer; box-shadow: 0 4px 15px rgba(216, 27, 96, 0.3);
         }
 
-        /* Konten Utama */
-        #main-content { display: none; width: 100%; text-align: center; padding: 20px; }
-        
+        /* Navigasi */
+        nav {
+            display: flex; justify-content: center; padding: 20px 0; gap: 25px;
+            background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px);
+            position: sticky; top: 0; z-index: 1000;
+        }
+
+        nav a {
+            color: rgba(93, 64, 55, 0.8); text-decoration: none;
+            font-size: 16px; font-weight: 500; cursor: pointer;
+        }
+
+        nav a.active { color: #d81b60; font-weight: bold; border-bottom: 2px solid #d81b60; }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; text-align: center; }
+
+        .page { display: none; animation: fadeIn 0.5s ease; }
+        .active-page { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .counter-container {
             background: white; padding: 25px; border-radius: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin: 20px auto;
-            max-width: 400px; border: 2px dashed #ffafbd;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin: 30px 0;
+            border: 2px dashed #ffafbd;
         }
+        .counter-time { font-size: 22px; font-weight: bold; color: #d81b60; margin-top: 10px; }
 
         .click-heart { position: absolute; color: #d81b60; font-size: 20px; pointer-events: none; animation: heartFloat 1s ease-out forwards; }
         @keyframes heartFloat { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
@@ -40,28 +63,52 @@
 </head>
 <body onclick="spawnHeart(event)">
 
-    <!-- TAMPILAN AWAL (MEMANCING AUDIO) -->
-    <div id="overlay">
-        <h2 style="color: #d81b60; margin-top: 0;">Halo Sayang 🌸</h2>
-        <p style="color: #666; font-size: 14px;">Klik tombol di bawah untuk memutar lagu dan melihat kenangan kita.</p>
-        <button class="btn-start" onclick="jalankanWeb()">Mulai Sekarang ✨</button>
+    <!-- TOMBOL MULAI (Agar navigasi tidak hilang, ini adalah lapisan atas) -->
+    <div id="welcome-overlay">
+        <h2 style="color: white; margin-bottom: 20px;">Welcome Home 🌸</h2>
+        <button class="btn-start" onclick="mulaiSemua()">Buka Kenangan ✨</button>
+        <p style="color: white; font-size: 12px; margin-top: 15px;">(Klik untuk memutar musik otomatis)</p>
     </div>
 
-    <!-- KONTEN UTAMA -->
-    <div id="main-content">
-        <h2 style="color: white; text-shadow: 2px 2px 5px rgba(0,0,0,0.1);">Welcome Home 🌸</h2>
-        <div class="counter-container">
-            <p style="margin: 0; font-size: 14px; color: #888;">Waktu Bersama:</p>
-            <div id="days-counter" style="font-size: 22px; font-weight: bold; color: #d81b60;">...</div>
+    <!-- PLAYER YOUTUBE TERSEMBUNYI -->
+    <div id="player-container"></div>
+
+    <nav id="main-nav" style="visibility: hidden;">
+        <a onclick="showPage('home')" id="nav-home" class="active">Home</a>
+        <a onclick="showPage('memories')" id="nav-memories">Memories</a>
+        <a onclick="showPage('message')" id="nav-message">Message</a>
+    </nav>
+
+    <div class="container" id="main-container" style="visibility: hidden;">
+        <!-- HOME PAGE -->
+        <div id="home" class="page active-page">
+            <h2 style="color: #ad1457;">Welcome Home 🌸</h2>
+            <div class="counter-container">
+                <p style="margin: 0; font-size: 14px; color: #888;">Waktu Bersama:</p>
+                <div id="days-counter" class="counter-time">Loading...</div>
+            </div>
+            <p style="color: #d81b60; font-weight: bold;">Lagu: Aku Milikmu - Dewa 19</p>
         </div>
-        <p style="color: white;">Lagu: Aku Milikmu - Dewa 19</p>
-        
-        <!-- Iframe YouTube Tersembunyi -->
-        <div id="player"></div>
+
+        <!-- MEMORIES PAGE -->
+        <div id="memories" class="page">
+            <h2 style="color: #ad1457;">🌸 Our Memories 🌸</h2>
+            <div class="counter-container">
+                <p>Tempat menyimpan foto atau cerita kenangan kita...</p>
+            </div>
+        </div>
+
+        <!-- MESSAGE PAGE -->
+        <div id="message" class="page">
+            <h2 style="color: #ad1457;">💌 Message Board 💌</h2>
+            <div class="counter-container">
+                <p>Pesan manis untukmu...</p>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Load YouTube API
+        // YouTube API Setup
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -69,30 +116,32 @@
 
         var player;
         function onYouTubeIframeAPIReady() {
-            player = new YT.Player('player', {
-                height: '0',
-                width: '0',
-                videoId: 'gT9g1cW1H-4', // ID Lagu Aku Milikmu
-                playerVars: {
-                    'autoplay': 1,
-                    'loop': 1,
-                    'playlist': 'gT9g1cW1H-4'
-                }
+            player = new YT.Player('player-container', {
+                height: '0', width: '0',
+                videoId: 'gT9g1cW1H-4',
+                playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'gT9g1cW1H-4' }
             });
         }
 
-        function jalankanWeb() {
-            // Sembunyikan tombol, munculkan isi web
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-            document.body.style.display = 'block';
-
-            // Putar Video
-            if (player) {
-                player.playVideo();
-            }
-
+        function mulaiSemua() {
+            // Hilangkan Overlay
+            document.getElementById('welcome-overlay').style.display = 'none';
+            
+            // Munculkan Navigasi dan Konten
+            document.getElementById('main-nav').style.visibility = 'visible';
+            document.getElementById('main-container').style.visibility = 'visible';
+            
+            // Putar Musik
+            if (player) { player.playVideo(); }
+            
             updateCounter();
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active-page');
+            document.getElementById('nav-' + pageId).classList.add('active');
         }
 
         function spawnHeart(e) {
